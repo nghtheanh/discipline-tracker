@@ -1,18 +1,17 @@
 "use client";
 import { useState } from "react";
 import Link from "next/link";
-import { format } from "date-fns";
+import { format, startOfWeek, endOfWeek, differenceInCalendarDays } from "date-fns";
+import { vi } from "date-fns/locale";
 import {
-  Calendar,
   Flame,
-  BarChart3,
-  Grid3X3,
-  CheckSquare,
+  Check,
   Plus,
   Trash2,
-  User,
-  Snowflake,
   Clock,
+  Snowflake,
+  ChevronRight,
+  ArrowRight,
 } from "lucide-react";
 import { DailyReflection } from "@/components/daily-reflection";
 import { useBlocks } from "@/hooks/use-blocks";
@@ -36,6 +35,11 @@ export default function TrangChu() {
   const [gioKetThuc, setGioKetThuc] = useState("09:30");
   const [loaiKhoiMoi, setLoaiKhoiMoi] = useState<BlockType>("study");
 
+  const ngayHienTai = new Date();
+  const dauTuan = startOfWeek(ngayHienTai, { weekStartsOn: 1 });
+  const cuoiTuan = endOfWeek(ngayHienTai, { weekStartsOn: 1 });
+  const soNgayConLaiTrongTuan = Math.max(0, differenceInCalendarDays(cuoiTuan, ngayHienTai));
+
   const chuoiNgayLienTiep = calcStreak({
     ...danhSachNgay,
     [duLieuHomNay.key]: {
@@ -44,7 +48,17 @@ export default function TrangChu() {
     },
   });
 
-  const chiSoNangLuong = Math.round(duLieuHomNay.day.pct * 100);
+  const tongSoMuc =
+    duLieuHomNay.day.tasks.length +
+    duLieuHomNay.settings.good.length +
+    duLieuHomNay.settings.bad.length;
+
+  const soMucDaXong =
+    duLieuHomNay.day.tasks.filter((v) => v.done).length +
+    duLieuHomNay.settings.good.filter((h) => duLieuHomNay.day.good[h.id]).length +
+    duLieuHomNay.settings.bad.filter((h) => duLieuHomNay.day.bad[h.id]).length;
+
+  const tyLeHoanThanh = tongSoMuc > 0 ? Math.round((soMucDaXong / tongSoMuc) * 100) : 0;
 
   const danhSachThoiQuenTot = duLieuHomNay.settings.good.map((muc) => ({
     ...muc,
@@ -56,9 +70,9 @@ export default function TrangChu() {
     trangThaiHoanThanh: !!duLieuHomNay.day.bad[muc.id],
   }));
 
-  const khoiThoiGianHomNay = quanLyKhoi.blocks.filter(
-    (khoi) => khoi.date === duLieuHomNay.key
-  );
+  const khoiThoiGianHomNay = quanLyKhoi.blocks
+    .filter((khoi) => khoi.date === duLieuHomNay.key)
+    .sort((a, b) => a.start - b.start);
 
   const chuyenGioSangPhut = (chuoiGio: string) => {
     const [gio, phut] = chuoiGio.split(":").map(Number);
@@ -103,289 +117,279 @@ export default function TrangChu() {
     datLai("");
   };
 
-  const danhSachDieuHuong = [
-    { duongDan: "/", nhan: "Hôm nay", bieuTuong: CheckSquare, dangChon: true },
-    { duongDan: "/calendar", nhan: "Lịch tuần", bieuTuong: Calendar, dangChon: false },
-    { duongDan: "/deep-work", nhan: "Deep Work", bieuTuong: Flame, dangChon: false },
-    { duongDan: "/heatmap", nhan: "Bản đồ xanh", bieuTuong: Grid3X3, dangChon: false },
-    { duongDan: "/report", nhan: "Báo cáo tuần", bieuTuong: BarChart3, dangChon: false },
-  ];
-
   return (
-    <div className="min-h-screen bg-white text-gray-900">
-      <aside className="border-b border-gray-200 bg-gray-50 px-5 py-6 md:fixed md:inset-y-0 md:left-0 md:flex md:w-64 md:flex-col md:justify-between md:border-b-0 md:border-r">
-        <div className="space-y-8">
-          <div className="flex items-center gap-3">
-            <div className="flex h-9 w-9 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-700">
-              <User className="h-4 w-4" />
-            </div>
+    <div className="min-h-screen bg-[#FAFAFA] text-gray-900">
+      <div className="mx-auto max-w-5xl px-6 py-8">
+        <div className="mb-8 border-b border-gray-200 pb-6">
+          <div className="flex flex-wrap items-baseline justify-between gap-4">
             <div>
-              <p className="text-sm font-semibold text-gray-900">Sổ kỷ luật</p>
-              <p className="text-xs text-gray-500">
-                {format(new Date(), "dd/MM/yyyy")}
+              <p className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+                Tuần: {format(dauTuan, "dd 'thg' MM", { locale: vi })} –{" "}
+                {format(cuoiTuan, "dd 'thg' MM", { locale: vi })}
               </p>
+              <h1 className="mt-1 text-2xl font-bold tracking-tight text-gray-900">
+                {format(ngayHienTai, "EEEE, dd/MM/yyyy", { locale: vi })}
+              </h1>
             </div>
-          </div>
 
-          <div className="grid grid-cols-2 gap-4 border-y border-gray-200 py-4">
-            <div>
-              <p className="text-xs font-medium uppercase tracking-wider text-gray-500">
-                Streak
-              </p>
-              <p className="mt-1 text-2xl font-semibold text-blue-600">
-                {chuoiNgayLienTiep}
-                <span className="ml-1 text-xs font-normal text-gray-500">
-                  ngày
-                </span>
-              </p>
-            </div>
-            <div>
-              <p className="text-xs font-medium uppercase tracking-wider text-gray-500">
-                Energy
-              </p>
-              <p className="mt-1 text-2xl font-semibold text-gray-900">
-                {chiSoNangLuong}%
-              </p>
-            </div>
-          </div>
-
-          <nav className="space-y-1">
-            {danhSachDieuHuong.map((muc) => {
-              const BieuTuong = muc.bieuTuong;
-              return (
-                <Link
-                  key={muc.duongDan}
-                  href={muc.duongDan}
-                  className={`flex items-center gap-2.5 rounded px-2.5 py-2 text-sm transition-colors ${
-                    muc.dangChon
-                      ? "bg-white font-medium text-blue-600 border border-gray-200"
-                      : "text-gray-600 hover:bg-gray-100 hover:text-gray-900"
-                  }`}
-                >
-                  <BieuTuong className="h-4 w-4" />
-                  <span>{muc.nhan}</span>
-                </Link>
-              );
-            })}
-          </nav>
-        </div>
-
-        <div className="mt-6 pt-4 md:mt-0">
-          <button
-            type="button"
-            onClick={duLieuHomNay.toggleFreeze}
-            className={`flex w-full items-center justify-center gap-2 rounded border px-3 py-2 text-xs font-medium transition-colors ${
-              duLieuHomNay.day.frozen
-                ? "border-blue-200 bg-blue-50 text-blue-600"
-                : "border-gray-200 bg-white text-gray-600 hover:bg-gray-100"
-            }`}
-          >
-            <Snowflake className="h-3.5 w-3.5" />
-            {duLieuHomNay.day.frozen
-              ? "Đang đóng băng hôm nay"
-              : "Đóng băng hôm nay"}
-          </button>
-        </div>
-      </aside>
-
-      <main className="md:pl-64">
-        <div className="mx-auto max-w-5xl px-6 py-8 md:px-10 md:py-10">
-          <header className="mb-8 border-b border-gray-200 pb-5">
-            <h1 className="text-2xl font-semibold tracking-tight text-gray-900">
-              Kế hoạch hôm nay
-            </h1>
-            <p className="mt-1 text-sm text-gray-500">
-              Tập trung vào từng khối thời gian và giữ vững thói quen cốt lõi.
-            </p>
-          </header>
-
-          <div className="grid gap-10 lg:grid-cols-2">
-            <section>
-              <div className="mb-4 flex items-center justify-between">
-                <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-500">
-                  Time-boxing hôm nay
-                </h2>
-                <Link
-                  href="/calendar"
-                  className="text-xs font-medium text-blue-600 hover:underline"
-                >
-                  Mở lịch tuần
-                </Link>
+            <div className="flex items-center gap-3">
+              <div className="flex items-center gap-1.5 rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-medium text-gray-700 shadow-sm">
+                <Flame className="h-3.5 w-3.5 text-amber-500" />
+                <span>{chuoiNgayLienTiep} ngày liên tiếp</span>
               </div>
+              <button
+                type="button"
+                onClick={duLieuHomNay.toggleFreeze}
+                className={`flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                  duLieuHomNay.day.frozen
+                    ? "border-blue-200 bg-blue-50 text-blue-600"
+                    : "border-gray-200 bg-white text-gray-600 hover:bg-gray-50 shadow-sm"
+                }`}
+              >
+                <Snowflake className="h-3.5 w-3.5" />
+                <span>{duLieuHomNay.day.frozen ? "Đang đóng băng" : "Đóng băng"}</span>
+              </button>
+            </div>
+          </div>
 
-              <div className="border-l border-gray-200 pl-5">
-                {khoiThoiGianHomNay.length === 0 ? (
-                  <p className="py-4 text-sm text-gray-400">
-                    Chưa có khối thời gian nào cho hôm nay. Thêm bên dưới hoặc kéo thả ở Lịch tuần.
+          <div className="mt-4 flex flex-wrap items-center justify-between gap-2 text-xs text-gray-500">
+            <div className="flex items-center gap-3">
+              <span className="font-medium text-gray-900">
+                {soMucDaXong}/{tongSoMuc} hoàn thành ({tyLeHoanThanh}%)
+              </span>
+              <span className="text-gray-300">•</span>
+              <span>còn {soNgayConLaiTrongTuan} ngày trong tuần</span>
+            </div>
+            <Link
+              href="/calendar"
+              className="inline-flex items-center gap-1 font-medium text-gray-900 hover:underline"
+            >
+              Mở chế độ xem tuần <ChevronRight className="h-3.5 w-3.5" />
+            </Link>
+          </div>
+
+          <div className="mt-2.5 h-1.5 w-full overflow-hidden rounded-full bg-gray-200">
+            <div
+              className="h-full rounded-full bg-gray-900 transition-all duration-300"
+              style={{ width: `${tyLeHoanThanh}%` }}
+            />
+          </div>
+        </div>
+
+        <div className="grid gap-8 lg:grid-cols-2">
+          <section className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+                Time-boxing trong ngày
+              </h2>
+              <span className="text-xs text-gray-500">
+                {khoiThoiGianHomNay.filter((k) => k.done).length}/{khoiThoiGianHomNay.length} block xong
+              </span>
+            </div>
+
+            <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+              {khoiThoiGianHomNay.length === 0 ? (
+                <div className="py-8 text-center">
+                  <Clock className="mx-auto h-7 w-7 text-gray-300" />
+                  <p className="mt-2 text-sm font-medium text-gray-700">Chưa có block thời gian nào</p>
+                  <p className="text-xs text-gray-400">
+                    Phân bổ giờ học, tập gym, giải trí để quản lý ngày hiệu quả.
                   </p>
-                ) : (
-                  <div className="space-y-4">
-                    {khoiThoiGianHomNay.map((khoi) => (
-                      <div
-                        key={khoi.id}
-                        className="group relative flex items-start justify-between gap-3 border-b border-gray-100 pb-3"
+                </div>
+              ) : (
+                <div className="space-y-2.5">
+                  {khoiThoiGianHomNay.map((khoi) => (
+                    <div
+                      key={khoi.id}
+                      className={`group flex items-center justify-between rounded-md border border-l-4 px-3 py-2.5 transition-colors ${
+                        BLOCK_META[khoi.type].borderClass
+                      } ${khoi.done ? "border-gray-200 bg-gray-50/60" : "border-gray-200 bg-white hover:bg-gray-50/40"}`}
+                    >
+                      <button
+                        type="button"
+                        onClick={() => xuLyDanhDauKhoi(khoi.id, khoi.done)}
+                        className="flex flex-1 items-center gap-3 text-left"
                       >
-                        <span className="absolute -left-[25px] top-1.5 h-2 w-2 rounded-full border border-gray-300 bg-white" />
-                        <label className="flex flex-1 cursor-pointer items-start gap-3">
-                          <input
-                            type="checkbox"
-                            checked={khoi.done}
-                            onChange={() => xuLyDanhDauKhoi(khoi.id, khoi.done)}
-                            className="mt-1 h-4 w-4 accent-blue-600"
-                          />
-                          <div>
-                            <div className="flex items-center gap-2 text-xs text-gray-500">
-                              <Clock className="h-3 w-3" />
-                              <span>
-                                {minutesToHHMM(khoi.start)} –{" "}
-                                {minutesToHHMM(khoi.end)}
-                              </span>
-                              <span className="text-gray-300">•</span>
-                              <span>{BLOCK_META[khoi.type].label}</span>
-                            </div>
-                            <p
-                              className={`mt-0.5 text-sm ${
-                                khoi.done
-                                  ? "text-gray-400 line-through"
-                                  : "font-medium text-gray-900"
-                              }`}
-                            >
-                              {khoi.title}
-                            </p>
-                          </div>
-                        </label>
+                        <div
+                          className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors ${
+                            khoi.done
+                              ? "border-gray-900 bg-gray-900 text-white"
+                              : "border-gray-300 bg-white"
+                          }`}
+                        >
+                          {khoi.done && <Check className="h-3 w-3 stroke-[3]" />}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p
+                            className={`truncate text-sm ${
+                              khoi.done
+                                ? "text-gray-400 line-through"
+                                : "font-medium text-gray-900"
+                            }`}
+                          >
+                            {khoi.title}
+                          </p>
+                          <p className="text-xs text-gray-400">
+                            {minutesToHHMM(khoi.start)} – {minutesToHHMM(khoi.end)} ·{" "}
+                            {BLOCK_META[khoi.type].label}
+                          </p>
+                        </div>
+                      </button>
+
+                      <div className="flex items-center gap-1">
+                        {khoi.type === "study" && !khoi.done && (
+                          <Link
+                            href={`/deep-work?task=${encodeURIComponent(khoi.title)}`}
+                            className="hidden items-center gap-1 rounded px-2 py-1 text-[11px] font-medium text-gray-600 hover:bg-gray-100 group-hover:inline-flex"
+                          >
+                            Focus <ArrowRight className="h-3 w-3" />
+                          </Link>
+                        )}
                         <button
                           type="button"
                           onClick={() => quanLyKhoi.removeBlock(khoi.id)}
-                          aria-label="Xóa khối thời gian"
-                          className="text-gray-300 opacity-0 transition-opacity hover:text-gray-600 group-hover:opacity-100"
+                          aria-label="Xóa block"
+                          className="text-gray-300 opacity-0 transition-opacity hover:text-red-600 group-hover:opacity-100 p-1"
                         >
-                          <Trash2 className="h-4 w-4" />
+                          <Trash2 className="h-3.5 w-3.5" />
                         </button>
                       </div>
-                    ))}
-                  </div>
-                )}
-
-                <form
-                  onSubmit={xuLyThemKhoi}
-                  className="mt-5 space-y-2 border-t border-gray-200 pt-4"
-                >
-                  <div className="flex flex-wrap items-center gap-2">
-                    <input
-                      type="time"
-                      value={gioBatDau}
-                      onChange={(e) => setGioBatDau(e.target.value)}
-                      className="rounded border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700"
-                    />
-                    <span className="text-xs text-gray-400">đến</span>
-                    <input
-                      type="time"
-                      value={gioKetThuc}
-                      onChange={(e) => setGioKetThuc(e.target.value)}
-                      className="rounded border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700"
-                    />
-                    <select
-                      value={loaiKhoiMoi}
-                      onChange={(e) =>
-                        setLoaiKhoiMoi(e.target.value as BlockType)
-                      }
-                      className="rounded border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700"
-                    >
-                      <option value="study">Học tập</option>
-                      <option value="gym">Tập luyện</option>
-                      <option value="fun">Giải trí</option>
-                      <option value="other">Khác</option>
-                    </select>
-                  </div>
-                  <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={tieuDeKhoiMoi}
-                      onChange={(e) => setTieuDeKhoiMoi(e.target.value)}
-                      placeholder="Thêm block (vd: Tự học Ca 1)..."
-                      className="flex-1 border-b border-gray-200 bg-transparent py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-gray-900 focus:outline-none"
-                    />
-                    <button
-                      type="submit"
-                      className="inline-flex items-center gap-1 rounded border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-100"
-                    >
-                      <Plus className="h-3.5 w-3.5" /> Thêm
-                    </button>
-                  </div>
-                </form>
-              </div>
-            </section>
-
-            <section className="space-y-8">
-              <div>
-                <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-gray-500">
-                  Việc hôm nay
-                </h2>
-                <div className="divide-y divide-gray-100 border-t border-gray-200">
-                  {duLieuHomNay.day.tasks.map((viec) => (
-                    <div
-                      key={viec.id}
-                      className="group flex items-center justify-between gap-3 py-2.5"
-                    >
-                      <label className="flex flex-1 cursor-pointer items-center gap-3">
-                        <input
-                          type="checkbox"
-                          checked={viec.done}
-                          onChange={() => duLieuHomNay.toggleTask(viec.id)}
-                          className="h-4 w-4 accent-blue-600"
-                        />
-                        <span
-                          className={`text-sm ${
-                            viec.done
-                              ? "text-gray-400 line-through"
-                              : "text-gray-900"
-                          }`}
-                        >
-                          {viec.title}
-                        </span>
-                      </label>
-                      <button
-                        type="button"
-                        onClick={() => duLieuHomNay.removeTask(viec.id)}
-                        aria-label="Xóa việc"
-                        className="text-gray-300 opacity-0 transition-opacity hover:text-gray-600 group-hover:opacity-100"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </button>
                     </div>
                   ))}
                 </div>
-                <form onSubmit={xuLyThemViec} className="mt-2">
+              )}
+
+              <form onSubmit={xuLyThemKhoi} className="mt-4 border-t border-gray-100 pt-3 space-y-2">
+                <div className="flex flex-wrap items-center gap-2">
+                  <input
+                    type="time"
+                    value={gioBatDau}
+                    onChange={(e) => setGioBatDau(e.target.value)}
+                    className="rounded border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700 focus:border-gray-900 focus:outline-none"
+                  />
+                  <span className="text-xs text-gray-400">–</span>
+                  <input
+                    type="time"
+                    value={gioKetThuc}
+                    onChange={(e) => setGioKetThuc(e.target.value)}
+                    className="rounded border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700 focus:border-gray-900 focus:outline-none"
+                  />
+                  <select
+                    value={loaiKhoiMoi}
+                    onChange={(e) => setLoaiKhoiMoi(e.target.value as BlockType)}
+                    className="rounded border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700 focus:border-gray-900 focus:outline-none"
+                  >
+                    <option value="study">Học tập</option>
+                    <option value="gym">Tập luyện</option>
+                    <option value="fun">Giải trí</option>
+                    <option value="other">Khác</option>
+                  </select>
+                </div>
+                <div className="flex gap-2">
+                  <input
+                    type="text"
+                    value={tieuDeKhoiMoi}
+                    onChange={(e) => setTieuDeKhoiMoi(e.target.value)}
+                    placeholder="Tên block mới..."
+                    className="flex-1 rounded border border-gray-200 bg-white px-2.5 py-1.5 text-xs text-gray-900 placeholder:text-gray-400 focus:border-gray-900 focus:outline-none"
+                  />
+                  <button
+                    type="submit"
+                    className="inline-flex items-center gap-1 rounded bg-gray-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-gray-800"
+                  >
+                    <Plus className="h-3 w-3" /> Thêm
+                  </button>
+                </div>
+              </form>
+            </div>
+          </section>
+
+          <section className="space-y-6">
+            <div className="space-y-3">
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+                Việc cần làm hôm nay
+              </h2>
+              <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+                <div className="space-y-1 divide-y divide-gray-100">
+                  {duLieuHomNay.day.tasks.length === 0 ? (
+                    <p className="py-2 text-xs text-gray-400">Chưa có công việc nào trong danh sách.</p>
+                  ) : (
+                    duLieuHomNay.day.tasks.map((viec) => (
+                      <div
+                        key={viec.id}
+                        className="group flex items-center justify-between gap-3 py-2 first:pt-0 last:pb-0"
+                      >
+                        <button
+                          type="button"
+                          onClick={() => duLieuHomNay.toggleTask(viec.id)}
+                          className="flex flex-1 items-center gap-3 text-left"
+                        >
+                          <div
+                            className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors ${
+                              viec.done
+                                ? "border-gray-900 bg-gray-900 text-white"
+                                : "border-gray-300 bg-white"
+                            }`}
+                          >
+                            {viec.done && <Check className="h-3 w-3 stroke-[3]" />}
+                          </div>
+                          <span
+                            className={`text-sm ${
+                              viec.done ? "text-gray-400 line-through" : "text-gray-900"
+                            }`}
+                          >
+                            {viec.title}
+                          </span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => duLieuHomNay.removeTask(viec.id)}
+                          aria-label="Xóa việc"
+                          className="text-gray-300 opacity-0 transition-opacity hover:text-red-600 group-hover:opacity-100"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    ))
+                  )}
+                </div>
+                <form onSubmit={xuLyThemViec} className="mt-3 border-t border-gray-100 pt-2.5">
                   <input
                     type="text"
                     value={viecMoi}
                     onChange={(e) => setViecMoi(e.target.value)}
-                    placeholder="+ Thêm việc hôm nay, nhấn Enter..."
-                    className="w-full border-b border-gray-200 bg-transparent py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-gray-900 focus:outline-none"
+                    placeholder="+ Thêm việc cần làm..."
+                    className="w-full bg-transparent text-xs text-gray-900 placeholder:text-gray-400 focus:outline-none"
                   />
                 </form>
               </div>
+            </div>
 
-              <div>
-                <h2 className="mb-3 text-sm font-semibold uppercase tracking-wider text-gray-500">
-                  Thói quen cần xây dựng
-                </h2>
-                <div className="divide-y divide-gray-100 border-t border-gray-200">
+            <div className="space-y-3">
+              <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400">
+                Thói quen cần xây dựng
+              </h2>
+              <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+                <div className="space-y-1 divide-y divide-gray-100">
                   {danhSachThoiQuenTot.map((thoiQuen) => (
                     <div
                       key={thoiQuen.id}
-                      className="group flex items-center justify-between gap-3 py-2.5"
+                      className="group flex items-center justify-between gap-3 py-2 first:pt-0 last:pb-0"
                     >
-                      <label className="flex flex-1 cursor-pointer items-center gap-3">
-                        <input
-                          type="checkbox"
-                          checked={thoiQuen.trangThaiHoanThanh}
-                          onChange={() =>
-                            duLieuHomNay.toggleHabit("good", thoiQuen.id)
-                          }
-                          className="h-4 w-4 accent-blue-600"
-                        />
+                      <button
+                        type="button"
+                        onClick={() => duLieuHomNay.toggleHabit("good", thoiQuen.id)}
+                        className="flex flex-1 items-center gap-3 text-left"
+                      >
+                        <div
+                          className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors ${
+                            thoiQuen.trangThaiHoanThanh
+                              ? "border-emerald-600 bg-emerald-600 text-white"
+                              : "border-gray-300 bg-white"
+                          }`}
+                        >
+                          {thoiQuen.trangThaiHoanThanh && <Check className="h-3 w-3 stroke-[3]" />}
+                        </div>
                         <span
                           className={`text-sm ${
                             thoiQuen.trangThaiHoanThanh
@@ -395,16 +399,14 @@ export default function TrangChu() {
                         >
                           {thoiQuen.title}
                         </span>
-                      </label>
+                      </button>
                       <button
                         type="button"
-                        onClick={() =>
-                          duLieuHomNay.removeHabit("good", thoiQuen.id)
-                        }
+                        onClick={() => duLieuHomNay.removeHabit("good", thoiQuen.id)}
                         aria-label="Xóa thói quen"
-                        className="text-gray-300 opacity-0 transition-opacity hover:text-gray-600 group-hover:opacity-100"
+                        className="text-gray-300 opacity-0 transition-opacity hover:text-red-600 group-hover:opacity-100"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-3.5 w-3.5" />
                       </button>
                     </div>
                   ))}
@@ -414,40 +416,49 @@ export default function TrangChu() {
                     e.preventDefault();
                     xuLyThemThoiQuen("good", thoiQuenTotMoi, setThoiQuenTotMoi);
                   }}
-                  className="mt-2"
+                  className="mt-3 border-t border-gray-100 pt-2.5"
                 >
                   <input
                     type="text"
                     value={thoiQuenTotMoi}
                     onChange={(e) => setThoiQuenTotMoi(e.target.value)}
-                    placeholder="+ Thêm thói quen cần xây dựng..."
-                    className="w-full border-b border-gray-200 bg-transparent py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-gray-900 focus:outline-none"
+                    placeholder="+ Thêm thói quen mới..."
+                    className="w-full bg-transparent text-xs text-gray-900 placeholder:text-gray-400 focus:outline-none"
                   />
                 </form>
               </div>
+            </div>
 
+            <div className="space-y-3">
               <div>
-                <h2 className="mb-1 text-sm font-semibold uppercase tracking-wider text-gray-500">
+                <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-400">
                   Thói quen xấu cần tránh
                 </h2>
-                <p className="mb-3 text-xs text-gray-400">
-                  Chỉ đánh dấu khi bạn đã giữ kỷ luật suốt 24 giờ.
+                <p className="text-[11px] text-gray-400">
+                  Chỉ tick khi đã giữ vững kỷ luật suốt 24 giờ.
                 </p>
-                <div className="divide-y divide-gray-100 border-t border-gray-200">
+              </div>
+              <div className="rounded-lg border border-gray-200 bg-white p-4 shadow-sm">
+                <div className="space-y-1 divide-y divide-gray-100">
                   {danhSachThoiQuenXau.map((thoiQuen) => (
                     <div
                       key={thoiQuen.id}
-                      className="group flex items-center justify-between gap-3 py-2.5"
+                      className="group flex items-center justify-between gap-3 py-2 first:pt-0 last:pb-0"
                     >
-                      <label className="flex flex-1 cursor-pointer items-center gap-3">
-                        <input
-                          type="checkbox"
-                          checked={thoiQuen.trangThaiHoanThanh}
-                          onChange={() =>
-                            duLieuHomNay.toggleHabit("bad", thoiQuen.id)
-                          }
-                          className="h-4 w-4 accent-blue-600"
-                        />
+                      <button
+                        type="button"
+                        onClick={() => duLieuHomNay.toggleHabit("bad", thoiQuen.id)}
+                        className="flex flex-1 items-center gap-3 text-left"
+                      >
+                        <div
+                          className={`flex h-4 w-4 shrink-0 items-center justify-center rounded border transition-colors ${
+                            thoiQuen.trangThaiHoanThanh
+                              ? "border-amber-600 bg-amber-600 text-white"
+                              : "border-gray-300 bg-white"
+                          }`}
+                        >
+                          {thoiQuen.trangThaiHoanThanh && <Check className="h-3 w-3 stroke-[3]" />}
+                        </div>
                         <span
                           className={`text-sm ${
                             thoiQuen.trangThaiHoanThanh
@@ -457,16 +468,14 @@ export default function TrangChu() {
                         >
                           {thoiQuen.title}
                         </span>
-                      </label>
+                      </button>
                       <button
                         type="button"
-                        onClick={() =>
-                          duLieuHomNay.removeHabit("bad", thoiQuen.id)
-                        }
+                        onClick={() => duLieuHomNay.removeHabit("bad", thoiQuen.id)}
                         aria-label="Xóa thói quen"
-                        className="text-gray-300 opacity-0 transition-opacity hover:text-gray-600 group-hover:opacity-100"
+                        className="text-gray-300 opacity-0 transition-opacity hover:text-red-600 group-hover:opacity-100"
                       >
-                        <Trash2 className="h-4 w-4" />
+                        <Trash2 className="h-3.5 w-3.5" />
                       </button>
                     </div>
                   ))}
@@ -476,28 +485,28 @@ export default function TrangChu() {
                     e.preventDefault();
                     xuLyThemThoiQuen("bad", thoiQuenXauMoi, setThoiQuenXauMoi);
                   }}
-                  className="mt-2"
+                  className="mt-3 border-t border-gray-100 pt-2.5"
                 >
                   <input
                     type="text"
                     value={thoiQuenXauMoi}
                     onChange={(e) => setThoiQuenXauMoi(e.target.value)}
                     placeholder="+ Thêm thói quen xấu cần tránh..."
-                    className="w-full border-b border-gray-200 bg-transparent py-1.5 text-sm text-gray-900 placeholder:text-gray-400 focus:border-gray-900 focus:outline-none"
+                    className="w-full bg-transparent text-xs text-gray-900 placeholder:text-gray-400 focus:outline-none"
                   />
                 </form>
               </div>
+            </div>
 
-              <DailyReflection
-                dayKey={duLieuHomNay.key}
-                loaded={duLieuHomNay.loaded}
-                reflection={duLieuHomNay.day.reflection}
-                onSave={(reflection) => duLieuHomNay.saveDay({ reflection })}
-              />
-            </section>
-          </div>
+            <DailyReflection
+              dayKey={duLieuHomNay.key}
+              loaded={duLieuHomNay.loaded}
+              reflection={duLieuHomNay.day.reflection}
+              onSave={(reflection) => duLieuHomNay.saveDay({ reflection })}
+            />
+          </section>
         </div>
-      </main>
+      </div>
     </div>
   );
 }

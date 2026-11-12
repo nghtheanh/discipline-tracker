@@ -12,7 +12,7 @@ export const metadata: Metadata = { title: "Sổ kỷ luật" };
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="vi" className={`${sans.variable} ${mono.variable}`}>
-      <body className="min-h-screen bg-white font-sans text-gray-900 antialiased">
+      <body className="min-h-screen bg-[#FAFAFA] font-sans text-gray-900 antialiased">
         <AuthProvider>
           <Nav />
           {children}
