@@ -1,0 +1,13 @@
+@tailwind base;@tailwind components;@tailwind utilities;
+@layer base{
+  :root{--background:210 40% 4%;--foreground:200 25% 87%;--card:205 30% 7%;--card-foreground:200 25% 87%;
+    --primary:158 90% 56%;--primary-foreground:150 60% 5%;--secondary:205 22% 13%;--muted:205 22% 12%;--muted-foreground:200 14% 50%;
+    --accent:199 92% 60%;--destructive:0 70% 55%;--border:205 25% 15%;--radius:.375rem}
+  *{@apply border-border}
+  body{background-image:radial-gradient(hsl(var(--border)) 1px,transparent 1px);background-size:22px 22px}
+}
+.fc{--fc-border-color:hsl(var(--border));--fc-page-bg-color:transparent;--fc-neutral-bg-color:hsl(var(--muted)/.4);--fc-today-bg-color:hsl(var(--primary)/.06);--fc-now-indicator-color:hsl(var(--primary));font-family:var(--font-sans)}
+.fc .fc-button-primary{background-color:hsl(var(--secondary));border-color:hsl(var(--border));color:hsl(var(--foreground));font-family:var(--font-mono);font-size:0.75rem}
+.fc .fc-button-primary:hover,.fc .fc-button-primary.fc-button-active{background-color:hsl(var(--primary)/.15);border-color:hsl(var(--primary));color:hsl(var(--primary))}
+.fc .fc-col-header-cell-cushion,.fc .fc-timegrid-slot-label-cushion{font-family:var(--font-mono);font-size:0.75rem;color:hsl(var(--muted-foreground))}
+.fc .fc-timegrid-event{border-radius:0.25rem;box-shadow:none}
